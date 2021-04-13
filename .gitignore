@@ -1,2 +1,3 @@
 models/example_model.hdf5
 __pycache__
+detections.txt

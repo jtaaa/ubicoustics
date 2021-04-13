@@ -15,6 +15,7 @@ import wget
 import os
 from reprint import output
 from helpers import Interpolator, ratio_to_db, dbFS, rangemap
+from datetime import datetime
 
 # thresholds
 PREDICTION_THRES = 0.8  # confidence
@@ -178,6 +179,7 @@ while 1:
     print("# Live Prediction Using Microphone: %s" % (mic_desc))
     stream.start_stream()
     while stream.is_active():
+        last_pred = "-"
         with output(initial_len=OUTPUT_LINES, interval=0) as output_lines:
             while True:
                 time.sleep(1.0 / FPS)  # 60fps
@@ -214,4 +216,9 @@ while 1:
                 event, conf = candidate
                 if conf > PREDICTION_THRES and db > DBLEVEL_THRES:
                     pred = event
+                    if pred != last_pred:
+                        timestamp = datetime.now().strftime("%D %H:%M:%S")
+                        with open("detections.txt", "a") as detections:
+                            detections.writelines(f"{timestamp} {pred.upper()}\n")
+                    last_pred = pred
                 output_lines[32] = "%20s: %s" % ("Prediction", pred.upper())
