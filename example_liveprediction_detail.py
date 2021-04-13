@@ -1,5 +1,9 @@
-from keras.models import load_model
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+
+tf.disable_v2_behavior()
+
+from tensorflow.compat.v1.keras.models import load_model
+from tensorflow.compat.v1.keras.backend import set_session
 import numpy as np
 from vggish_input import waveform_to_examples
 import ubicoustics
@@ -91,8 +95,10 @@ if not ubicoustics_model.is_file():
 # Load Deep Learning Model
 ##############################
 print("Using deep learning model: %s" % (model_filename))
-model = load_model(model_filename)
-graph = tf.get_default_graph()
+session = tf.Session(graph=tf.Graph())
+with session.graph.as_default():
+    set_session(session)
+    model = load_model(model_filename)
 context = ubicoustics.everything
 
 label = dict()
@@ -113,7 +119,7 @@ for k in range(31):
 
 # Audio Input Callback
 def audio_samples(in_data, frame_count, time_info, status_flags):
-    global graph
+    global session
     global output_lines
     global interpolators
     global audio_rms
@@ -129,7 +135,8 @@ def audio_samples(in_data, frame_count, time_info, status_flags):
     # Make Predictions
     x = waveform_to_examples(np_wav, RATE)
     predictions = []
-    with graph.as_default():
+    with session.graph.as_default():
+        set_session(session)
         if x.shape[0] != 0:
             x = x.reshape(len(x), 96, 64, 1)
             pred = model.predict(x)

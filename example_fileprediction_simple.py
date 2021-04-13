@@ -1,7 +1,11 @@
+import tensorflow.compat.v1 as tf
+
+tf.disable_v2_behavior()
+
+from tensorflow.compat.v1.keras.models import load_model
+from tensorflow.compat.v1.keras.backend import set_session
 from vggish_input import waveform_to_examples, wavfile_to_examples
 import numpy as np
-import tensorflow as tf
-from keras.models import load_model
 import vggish_params
 from pathlib import Path
 import ubicoustics
@@ -32,9 +36,11 @@ selected_file = "example.wav"
 selected_context = "everything"
 
 print("Using deep learning model: %s" % (trained_model))
-model = load_model(trained_model)
+session = tf.Session(graph=tf.Graph())
+with session.graph.as_default():
+    set_session(session)
+    model = load_model(model_filename)
 context = context_mapping[selected_context]
-graph = tf.get_default_graph()
 
 label = dict()
 for k in range(len(context)):
@@ -44,7 +50,8 @@ for k in range(len(context)):
 # Read Wavfile and Make Predictions
 ###########################
 x = wavfile_to_examples(selected_file)
-with graph.as_default():
+with session.graph.as_default():
+    set_session(session)
 
     x = x.reshape(len(x), 96, 64, 1)
     predictions = model.predict(x)
@@ -52,7 +59,4 @@ with graph.as_default():
     for k in range(len(predictions)):
         prediction = predictions[k]
         m = np.argmax(prediction)
-        print(
-            "Prediction: %s (%0.2f)"
-            % (ubicoustics.to_human_labels[label[m]], prediction[m])
-        )
+        print("Prediction: %s (%0.2f)" % (ubicoustics.to_human_labels[label[m]], prediction[m]))

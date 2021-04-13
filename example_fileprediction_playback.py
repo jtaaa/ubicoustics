@@ -1,11 +1,15 @@
+import tensorflow.compat.v1 as tf
+
+tf.disable_v2_behavior()
+
+from tensorflow.compat.v1.keras.models import load_model
+from tensorflow.compat.v1.keras.backend import set_session
 from vggish_input import waveform_to_examples
 import numpy as np
-from keras.models import load_model
 import vggish_params
 import pyaudio
 from pathlib import Path
 import time
-import tensorflow as tf
 import wave
 import wget
 import ubicoustics
@@ -40,8 +44,10 @@ selected_file = "example.wav"
 selected_context = "everything"
 
 print("Using deep learning model: %s" % (trained_model))
-model = load_model(trained_model)
-graph = tf.get_default_graph()
+session = tf.Session(graph=tf.Graph())
+with session.graph.as_default():
+    set_session(session)
+    model = load_model(model_filename)
 wf = wave.open(selected_file, "rb")
 
 context = context_mapping[selected_context]
@@ -51,13 +57,14 @@ for k in range(len(context)):
 
 # Setup Callback
 def audio_samples(input, frame_count, time_info, status_flags):
-    global graph
+    global session
     in_data = wf.readframes(frame_count)
     np_wav = np.fromstring(in_data, dtype=np.int16) / 32768.0
     x = waveform_to_examples(np_wav, RATE)
     predictions = []
 
-    with graph.as_default():
+    with session.graph.as_default():
+        set_session(session)
         if x.shape[0] != 0:
             x = x.reshape(len(x), 96, 64, 1)
             pred = model.predict(x)
@@ -67,10 +74,7 @@ def audio_samples(input, frame_count, time_info, status_flags):
             m = np.argmax(prediction[0])
             if m < len(label):
                 p = label[m]
-                print(
-                    "Prediction: %s (%0.2f)"
-                    % (ubicoustics.to_human_labels[label[m]], prediction[0, m])
-                )
+                print("Prediction: %s (%0.2f)" % (ubicoustics.to_human_labels[label[m]], prediction[0, m]))
                 n_items = prediction.shape[1]
             else:
                 print("KeyError: %s" % m)
