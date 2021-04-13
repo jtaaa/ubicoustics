@@ -13,8 +13,8 @@ from reprint import output
 from helpers import Interpolator, ratio_to_db, dbFS, rangemap
 
 # thresholds
-PREDICTION_THRES = 0.8 # confidence
-DBLEVEL_THRES = -40 # dB
+PREDICTION_THRES = 0.8  # confidence
+DBLEVEL_THRES = -40  # dB
 
 # Variables
 FORMAT = pyaudio.paInt16
@@ -28,8 +28,9 @@ OUTPUT_LINES = 33
 ###########################
 # Model download
 ###########################
-def download_model(url,output):
-    return wget.download(url,output)
+def download_model(url, output):
+    return wget.download(url, output)
+
 
 ###########################
 # Check Microphone
@@ -39,8 +40,9 @@ print("1 / 2: Checking Microphones... ")
 print("=====")
 
 import microphones
+
 desc, mics, indices = microphones.list_microphones()
-if (len(mics) == 0):
+if len(mics) == 0:
     print("Error: No microphone found.")
     exit()
 
@@ -57,7 +59,7 @@ try:
         print("User selected mic: %d" % MICROPHONE_INDEX)
     else:
         mic_in = input("Select microphone [%d]: " % MICROPHONE_INDEX).strip()
-        if (mic_in!=''):
+        if mic_in != "":
             MICROPHONE_INDEX = int(mic_in)
 except:
     print("Invalid microphone")
@@ -67,7 +69,7 @@ except:
 mic_desc = ""
 for k in range(len(indices)):
     i = indices[k]
-    if (i==MICROPHONE_INDEX):
+    if i == MICROPHONE_INDEX:
         mic_desc = mics[k]
 print("Using mic: %s" % mic_desc)
 
@@ -81,7 +83,7 @@ print("2 / 2: Checking model... ")
 print("=====")
 model_filename = "models/example_model.hdf5"
 ubicoustics_model = Path(model_filename)
-if (not ubicoustics_model.is_file()):
+if not ubicoustics_model.is_file():
     print("Downloading example_model.hdf5 [867MB]: ")
     download_model(MODEL_URL, MODEL_PATH)
 
@@ -100,9 +102,9 @@ for k in range(len(context)):
 ##############################
 # Setup Audio Callback
 ##############################
-output_lines = []*OUTPUT_LINES
+output_lines = [] * OUTPUT_LINES
 audio_rms = 0
-candidate = ("-",0.0)
+candidate = ("-", 0.0)
 
 # Prediction Interpolators
 interpolators = []
@@ -116,10 +118,10 @@ def audio_samples(in_data, frame_count, time_info, status_flags):
     global interpolators
     global audio_rms
     global candidate
-    np_wav = np.fromstring(in_data, dtype=np.int16) / 32768.0 # Convert to [-1.0, +1.0]
+    np_wav = np.fromstring(in_data, dtype=np.int16) / 32768.0  # Convert to [-1.0, +1.0]
 
     # Compute RMS and convert to dB
-    rms = np.sqrt(np.mean(np_wav**2))
+    rms = np.sqrt(np.mean(np_wav ** 2))
     db = dbFS(rms)
     interp = interpolators[30]
     interp.animate(interp.end, db, 1.0)
@@ -135,53 +137,74 @@ def audio_samples(in_data, frame_count, time_info, status_flags):
 
         for prediction in predictions:
             m = np.argmax(prediction[0])
-            candidate = (ubicoustics.to_human_labels[label[m]],prediction[0,m])
+            candidate = (ubicoustics.to_human_labels[label[m]], prediction[0, m])
             num_classes = len(prediction[0])
             for k in range(num_classes):
                 interp = interpolators[k]
                 prev = interp.end
-                interp.animate(prev,prediction[0,k],1.0)
+                interp.animate(prev, prediction[0, k], 1.0)
     return (in_data, pyaudio.paContinue)
+
 
 ##############################
 # Main Execution
 ##############################
-while(1):
+while 1:
     ##############################
     # Setup Audio
     ##############################
     p = pyaudio.PyAudio()
-    stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK, stream_callback=audio_samples, input_device_index=MICROPHONE_INDEX)
+    stream = p.open(
+        format=FORMAT,
+        channels=CHANNELS,
+        rate=RATE,
+        input=True,
+        frames_per_buffer=CHUNK,
+        stream_callback=audio_samples,
+        input_device_index=MICROPHONE_INDEX,
+    )
 
     ##############################
     # Start Non-Blocking Stream
     ##############################
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system("cls" if os.name == "nt" else "clear")
     print("# Live Prediction Using Microphone: %s" % (mic_desc))
     stream.start_stream()
     while stream.is_active():
         with output(initial_len=OUTPUT_LINES, interval=0) as output_lines:
             while True:
-                time.sleep(1.0/FPS) # 60fps
+                time.sleep(1.0 / FPS)  # 60fps
                 for k in range(30):
                     interp = interpolators[k]
                     val = interp.update()
-                    bar = ["|"] * int((val*100.0))
-                    output_lines[k] = "%20s: %.2f %s" % (ubicoustics.to_human_labels[label[k]], val, "".join(bar))
+                    bar = ["|"] * int((val * 100.0))
+                    output_lines[k] = "%20s: %.2f %s" % (
+                        ubicoustics.to_human_labels[label[k]],
+                        val,
+                        "".join(bar),
+                    )
 
                 # dB Levels
                 interp = interpolators[30]
                 db = interp.update()
                 val = rangemap(db, -50, 0, 0, 100)
-                bar = ["|"] * min(100,int((val)))
-                output_lines[30] = "%20s: %.1fdB [%s " % ("Audio Level", db, "".join(bar))
+                bar = ["|"] * min(100, int((val)))
+                output_lines[30] = "%20s: %.1fdB [%s " % (
+                    "Audio Level",
+                    db,
+                    "".join(bar),
+                )
 
                 # Display Thresholds
-                output_lines[31] = "%20s: confidence = %.2f, db_level = %.1f" % ("Thresholds", PREDICTION_THRES, DBLEVEL_THRES)
+                output_lines[31] = "%20s: confidence = %.2f, db_level = %.1f" % (
+                    "Thresholds",
+                    PREDICTION_THRES,
+                    DBLEVEL_THRES,
+                )
 
                 # Final Prediction
                 pred = "-"
-                event,conf = candidate
-                if (conf > PREDICTION_THRES and db > DBLEVEL_THRES):
+                event, conf = candidate
+                if conf > PREDICTION_THRES and db > DBLEVEL_THRES:
                     pred = event
                 output_lines[32] = "%20s: %s" % ("Prediction", pred.upper())

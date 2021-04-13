@@ -25,8 +25,9 @@ print("1 / 2: Checking Microphones... ")
 print("=====")
 
 import microphones
+
 desc, mics, indices = microphones.list_microphones()
-if (len(mics) == 0):
+if len(mics) == 0:
     print("Error: No microphone found.")
     exit()
 
@@ -43,7 +44,7 @@ try:
         print("User selected mic: %d" % MICROPHONE_INDEX)
     else:
         mic_in = input("Select microphone [%d]: " % MICROPHONE_INDEX).strip()
-        if (mic_in!=''):
+        if mic_in != "":
             MICROPHONE_INDEX = int(mic_in)
 except:
     print("Invalid microphone")
@@ -53,7 +54,7 @@ except:
 mic_desc = ""
 for k in range(len(indices)):
     i = indices[k]
-    if (i==MICROPHONE_INDEX):
+    if i == MICROPHONE_INDEX:
         mic_desc = mics[k]
 print("Using mic: %s" % mic_desc)
 
@@ -67,9 +68,9 @@ print("2 / 2: Checking model... ")
 print("=====")
 model_filename = "models/example_model.hdf5"
 ubicoustics_model = Path(model_filename)
-if (not ubicoustics_model.is_file()):
+if not ubicoustics_model.is_file():
     print("Downloading example_model.hdf5 [867MB]: ")
-    wget.download(MODEL_URL,MODEL_PATH)
+    wget.download(MODEL_URL, MODEL_PATH)
 
 ##############################
 # Load Deep Learning Model
@@ -88,7 +89,7 @@ for k in range(len(context)):
 ##############################
 def audio_samples(in_data, frame_count, time_info, status_flags):
     global graph
-    np_wav = np.fromstring(in_data, dtype=np.int16) / 32768.0 # Convert to [-1.0, +1.0]
+    np_wav = np.fromstring(in_data, dtype=np.int16) / 32768.0  # Convert to [-1.0, +1.0]
     x = waveform_to_examples(np_wav, RATE)
     predictions = []
     with graph.as_default():
@@ -99,24 +100,36 @@ def audio_samples(in_data, frame_count, time_info, status_flags):
 
         for prediction in predictions:
             m = np.argmax(prediction[0])
-            if (m < len(label)):
+            if m < len(label):
                 p = label[m]
-                print("Prediction: %s (%0.2f)" % (ubicoustics.to_human_labels[label[m]], prediction[0,m]))
+                print(
+                    "Prediction: %s (%0.2f)"
+                    % (ubicoustics.to_human_labels[label[m]], prediction[0, m])
+                )
                 n_items = prediction.shape[1]
             else:
                 print("KeyError: %s" % m)
 
     return (in_data, pyaudio.paContinue)
 
+
 ##############################
 # Launch Application
 ##############################
-while(1):
+while 1:
     ##############################
     # Setup Audio
     ##############################
     p = pyaudio.PyAudio()
-    stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK, stream_callback=audio_samples, input_device_index=MICROPHONE_INDEX)
+    stream = p.open(
+        format=FORMAT,
+        channels=CHANNELS,
+        rate=RATE,
+        input=True,
+        frames_per_buffer=CHUNK,
+        stream_callback=audio_samples,
+        input_device_index=MICROPHONE_INDEX,
+    )
 
     ##############################
     # Start Non-Blocking Stream

@@ -4,6 +4,7 @@
 
 import math
 
+
 class EasingBase:
     limit = (0, 1)
 
@@ -110,7 +111,7 @@ class QuinticEaseInOut(EasingBase):
     def func(self, t):
         if t < 0.5:
             return 16 * t * t * t * t * t
-        p = ((2 * t) - 2)
+        p = (2 * t) - 2
         return 0.5 * p * p * p * p * p + 1
 
 
@@ -203,8 +204,16 @@ class ElasticEaseOut(EasingBase):
 class ElasticEaseInOut(EasingBase):
     def func(self, t):
         if t < 0.5:
-            return 0.5 * math.sin(13 * math.pi / 2 * (2 * t)) * math.pow(2, 10 * ((2 * t) - 1))
-        return 0.5 * (math.sin(-13 * math.pi / 2 * ((2 * t - 1) + 1)) * math.pow(2, -10 * (2 * t - 1)) + 2)
+            return (
+                0.5
+                * math.sin(13 * math.pi / 2 * (2 * t))
+                * math.pow(2, 10 * ((2 * t) - 1))
+            )
+        return 0.5 * (
+            math.sin(-13 * math.pi / 2 * ((2 * t - 1) + 1))
+            * math.pow(2, -10 * (2 * t - 1))
+            + 2
+        )
 
 
 """
@@ -229,7 +238,7 @@ class BackEaseInOut(EasingBase):
             p = 2 * t
             return 0.5 * (p * p * p - p * math.sin(p * math.pi))
 
-        p = (1 - (2 * t - 1))
+        p = 1 - (2 * t - 1)
 
         return 0.5 * (1 - (p * p * p - p * math.sin(p * math.pi))) + 0.5
 

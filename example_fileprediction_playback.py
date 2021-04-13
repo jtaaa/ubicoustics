@@ -15,7 +15,7 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 16000
 CHUNK = RATE
-float_dtype = '>f4'
+float_dtype = ">f4"
 
 ###########################
 # Download model, if it doesn't exist
@@ -27,22 +27,22 @@ print("Checking model... ")
 print("=====")
 model_filename = "models/example_model.hdf5"
 ubicoustics_model = Path(model_filename)
-if (not ubicoustics_model.is_file()):
+if not ubicoustics_model.is_file():
     print("Downloading example_model.hdf5 [867MB]: ")
-    wget.download(MODEL_URL,MODEL_PATH)
+    wget.download(MODEL_URL, MODEL_PATH)
 
 # Load Model
 context = ubicoustics.everything
 context_mapping = ubicoustics.context_mapping
 trained_model = model_filename
 other = True
-selected_file = 'example.wav'
-selected_context = 'everything'
+selected_file = "example.wav"
+selected_context = "everything"
 
 print("Using deep learning model: %s" % (trained_model))
 model = load_model(trained_model)
 graph = tf.get_default_graph()
-wf = wave.open(selected_file, 'rb')
+wf = wave.open(selected_file, "rb")
 
 context = context_mapping[selected_context]
 label = dict()
@@ -65,18 +65,29 @@ def audio_samples(input, frame_count, time_info, status_flags):
 
         for prediction in predictions:
             m = np.argmax(prediction[0])
-            if (m < len(label)):
+            if m < len(label):
                 p = label[m]
-                print("Prediction: %s (%0.2f)" % (ubicoustics.to_human_labels[label[m]], prediction[0,m]))
+                print(
+                    "Prediction: %s (%0.2f)"
+                    % (ubicoustics.to_human_labels[label[m]], prediction[0, m])
+                )
                 n_items = prediction.shape[1]
             else:
                 print("KeyError: %s" % m)
 
     return (in_data, pyaudio.paContinue)
 
+
 # Setup pyaudio waveread stream
 p = pyaudio.PyAudio()
-stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, output=True, frames_per_buffer=CHUNK, stream_callback=audio_samples)
+stream = p.open(
+    format=FORMAT,
+    channels=CHANNELS,
+    rate=RATE,
+    output=True,
+    frames_per_buffer=CHUNK,
+    stream_callback=audio_samples,
+)
 
 # Start non-blocking stream
 print("Beginning prediction for %s (use speakers for playback):" % selected_file)
