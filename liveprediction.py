@@ -19,7 +19,7 @@ from datetime import datetime
 
 # thresholds
 PREDICTION_THRES = 0.8  # confidence
-DBLEVEL_THRES = -40  # dB
+DBLEVEL_THRES = -35  # dB
 
 # Variables
 FORMAT = pyaudio.paInt16
@@ -28,7 +28,6 @@ RATE = 16000
 CHUNK = RATE
 MICROPHONES_DESCRIPTION = []
 FPS = 60.0
-OUTPUT_LINES = 33
 
 ###########################
 # Model download
@@ -109,7 +108,7 @@ for k in range(len(context)):
 ##############################
 # Setup Audio Callback
 ##############################
-output_lines = [] * OUTPUT_LINES
+m = 0
 audio_rms = 0
 candidate = ("-", 0.0)
 
@@ -121,10 +120,10 @@ for k in range(31):
 # Audio Input Callback
 def audio_samples(in_data, frame_count, time_info, status_flags):
     global session
-    global output_lines
     global interpolators
     global audio_rms
     global candidate
+    global m
     np_wav = np.fromstring(in_data, dtype=np.int16) / 32768.0  # Convert to [-1.0, +1.0]
 
     # Compute RMS and convert to dB
@@ -180,45 +179,29 @@ while 1:
     stream.start_stream()
     while stream.is_active():
         last_pred = "-"
-        with output(initial_len=OUTPUT_LINES, interval=0) as output_lines:
-            while True:
-                time.sleep(1.0 / FPS)  # 60fps
-                for k in range(30):
-                    interp = interpolators[k]
-                    val = interp.update()
-                    bar = ["|"] * int((val * 100.0))
-                    output_lines[k] = "%20s: %.2f %s" % (
-                        ubicoustics.to_human_labels[label[k]],
-                        val,
-                        "".join(bar),
-                    )
+        while True:
+            time.sleep(1.0 / FPS)  # 60fps
+            for k in range(30):
+                interp = interpolators[k]
+                val = interp.update()
 
-                # dB Levels
-                interp = interpolators[30]
-                db = interp.update()
-                val = rangemap(db, -50, 0, 0, 100)
-                bar = ["|"] * min(100, int((val)))
-                output_lines[30] = "%20s: %.1fdB [%s " % (
-                    "Audio Level",
-                    db,
-                    "".join(bar),
-                )
+            # dB Levels
+            interp = interpolators[30]
+            db = interp.update()
 
-                # Display Thresholds
-                output_lines[31] = "%20s: confidence = %.2f, db_level = %.1f" % (
-                    "Thresholds",
-                    PREDICTION_THRES,
-                    DBLEVEL_THRES,
-                )
-
-                # Final Prediction
-                pred = "-"
-                event, conf = candidate
-                if conf > PREDICTION_THRES and db > DBLEVEL_THRES:
-                    pred = event
-                    if pred != last_pred:
-                        timestamp = datetime.now().strftime("%D %H:%M:%S")
-                        with open("detections.txt", "a") as detections:
-                            detections.writelines(f"{timestamp} {pred.upper()}\n")
+            # Final Prediction
+            pred = "-"
+            event, conf = candidate
+            pred = event
+            if conf > PREDICTION_THRES and db > DBLEVEL_THRES:
+                if pred != last_pred:
+                    timestamp = datetime.now().strftime("%D %H:%M:%S")
+                    print(f"{timestamp} {pred.upper()}")
+                    with open("sound_detection.txt", "w") as detection:
+                        detection.writelines(f"{m}")
                     last_pred = pred
-                output_lines[32] = "%20s: %s" % ("Prediction", pred.upper())
+            else:
+                if pred != last_pred:
+                    with open("sound_detection.txt", "w") as detection:
+                        detection.writelines("-")
+                    last_pred = "-"
