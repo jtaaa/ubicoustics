@@ -81,11 +81,11 @@ print("Using mic: %s" % mic_desc)
 # Download model, if it doesn't exist
 ###########################
 MODEL_URL = "https://www.dropbox.com/s/cq1d7uqg0l28211/example_model.hdf5?dl=1"
-MODEL_PATH = "models/example_model.hdf5"
+MODEL_PATH = "/user/rock/ubicoustics/models/example_model.hdf5"
 print("=====")
 print("2 / 2: Checking model... ")
 print("=====")
-model_filename = "models/example_model.hdf5"
+model_filename = "/user/rock/ubicoustics/models/example_model.hdf5"
 ubicoustics_model = Path(model_filename)
 if not ubicoustics_model.is_file():
     print("Downloading example_model.hdf5 [867MB]: ")
@@ -197,11 +197,11 @@ while 1:
                 if pred != last_pred:
                     timestamp = datetime.now().strftime("%D %H:%M:%S")
                     print(f"{timestamp} {pred.upper()}")
-                    with open("sound_detection.txt", "w") as detection:
+                    with open("/home/rock/ubicoustics/sound_detection.txt", "w") as detection:
                         detection.writelines(f"{m}")
                     last_pred = pred
             else:
                 if pred != last_pred:
-                    with open("sound_detection.txt", "w") as detection:
+                    with open("/home/rock/ubicoustics/sound_detection.txt", "w") as detection:
                         detection.writelines("-")
                     last_pred = "-"
