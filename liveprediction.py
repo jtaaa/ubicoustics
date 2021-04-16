@@ -81,11 +81,11 @@ print("Using mic: %s" % mic_desc)
 # Download model, if it doesn't exist
 ###########################
 MODEL_URL = "https://www.dropbox.com/s/cq1d7uqg0l28211/example_model.hdf5?dl=1"
-MODEL_PATH = "/user/rock/ubicoustics/models/example_model.hdf5"
+MODEL_PATH = "/home/rock/ubicoustics/models/example_model.hdf5"
 print("=====")
 print("2 / 2: Checking model... ")
 print("=====")
-model_filename = "/user/rock/ubicoustics/models/example_model.hdf5"
+model_filename = "/home/rock/ubicoustics/models/example_model.hdf5"
 ubicoustics_model = Path(model_filename)
 if not ubicoustics_model.is_file():
     print("Downloading example_model.hdf5 [867MB]: ")
