@@ -1,0 +1,5 @@
+tensorflow-aarch64
+numpy
+keras
+wget
+pyaudio --global-option='-I/opt/local/include' --global-option='-L/opt/local/lib'
